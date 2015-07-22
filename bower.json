@@ -1,0 +1,21 @@
+{
+  "name": "palladio-path-component",
+  "version": "0.0.0",
+  "homepage": "https://github.com/humanitiesplusdesign/palladio-path-component",
+  "authors": [
+    "Ethan Jewett <esjewett@gmail.com>"
+  ],
+  "description": "A component for visualizing paths",
+  "dependencies": {
+    "palladio": "~1.0.3"
+  },
+  "main": "main.js",
+  "license": "BSD 3-clause",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
