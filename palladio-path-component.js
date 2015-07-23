@@ -1,5 +1,7 @@
 // Facet filter module
 
+// Most code based on http://bl.ocks.org/hepplerj/e5d3d5787f348cc3b032
+
 angular.module('palladioPathView', ['palladio', 'palladio.services'])
 	.directive('palladioPathView', function (palladioService, dataService) {
 		return {
