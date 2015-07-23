@@ -17,7 +17,16 @@
     <body>
         <div ui-view id="main"></div>
 
+        <script type="text/javascript">
+            // Setup for tsort module...
+            function require(module) { return window[module];  };
+            var module = {};
+            var util = {
+                isArray: Array.isArray
+            };
+        </script>
         <script src="../bower_components/palladio/palladio.js"></script>
+        <script src="../bower_components/tsort/index.js"></script>
         <script src="../palladio-path-component.js"></script>
 
         <script src="js/app.js"></script>

@@ -21,6 +21,58 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 				post : function(scope, element, attrs) {
 					// Anything that touches the DOM happens here.
 					
+					console.log(palladioService);
+					console.log(dataService);
+					
+					var xfilter = dataService.getDataSync().xfilter;
+					var fullData = dataService.getDataSync().data;
+					var dummyDim = xfilter.dimension(function(d) { return true; });
+					
+					var filteredData = dummyDim.top(Infinity);
+					
+					var m = d3.map();
+					fullData.sort(function(a,b){ return a.uniq > b.uniq; }).forEach(function(d) {
+						if(d.chinese) {
+							if(m.has([d.chinese, d.trial, d.session])) {
+								m.get([d.chinese, d.trial, d.session]).push(d.token);
+							} else {
+								m.set([d.chinese, d.trial, d.session], [d.token])
+							}
+						}
+					})
+					
+					var characters = [];
+					fullData
+						.sort(function(a,b){ return a.uniq > b.uniq; })
+						.filter(function(d) { return d.trial === '1' && d.session === '2'; })
+						.forEach(function(d) {
+							if(characters.indexOf(d.chinese) === -1) {
+								characters.push(d.chinese);
+							}
+						});
+					
+					var charkeys = d3.map();
+					m.entries().forEach(function(d){
+						if(charkeys.has(d.key.split(',')[0])){
+							charkeys.set(d.key.split(',')[0], charkeys.get(d.key.split(',')[0]).add(d.value));
+						} else {
+							var graph = new Graph();
+							graph.add(d.value);
+							charkeys.set(d.key.split(',')[0], graph);
+						}
+					})
+					
+					console.log(charkeys.entries().map(function(d) { 
+						var test;
+						try {
+							d.value = d.value.sort();
+						} catch(e) {
+							// Contains a loop :-(
+							d.value = [];
+						}
+						return d;
+					}));
+					
 					var width   = 960,
 					    height  = 200,
 					    margin  = 20,
