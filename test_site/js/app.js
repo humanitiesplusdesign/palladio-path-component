@@ -10,18 +10,25 @@ angular.module('palladioStandaloneApp', [
 	'ui.router'
 	])
 	.config(function($stateProvider, $urlRouterProvider) {
-		$urlRouterProvider.otherwise("/upload");
+		$urlRouterProvider.otherwise("upload");
 
 		$stateProvider
-			.state('/upload', {
+			.state('upload', {
 				url: '/upload',
 				templateUrl: 'partials/upload-standalone.html',
 				controller: 'WorkflowCtrl'
 			})
-			.state('/visualization', {
+			.state('visualization', {
 				url: '/visualization',
 				templateUrl: 'partials/visualization-standalone.html',
-				controller: function($scope, data, palladioService) {
+				controller: function($scope, data, palladioService, $state) {
+					// Guard against coming here before loading data.
+					if(data.data === undefined) {
+						$state.go('upload').then(function() {
+							document.location.reload(true);
+						});
+					}
+					
 					palladioService.facetFilter("#facet-filter-here", {
 						height: "300px",
 						showControls: false,
