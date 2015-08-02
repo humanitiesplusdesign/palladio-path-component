@@ -23,75 +23,11 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 
 				post : function(scope, element, attrs) {
 					// Anything that touches the DOM happens here.
-
-					console.log(palladioService);
-					console.log(dataService);
+					
+					var fullData, filteredData;
 
 					var xfilter = dataService.getDataSync().xfilter;
-					var fullData = dataService.getDataSync().data;
 					var dummyDim = xfilter.dimension(function(d) { return true; });
-
-					var filteredData = dummyDim.top(Infinity);
-
-					var m = d3.map();
-					
-					fullData.forEach(function(d) {
-						// Turn uniq into a number
-						d.uniq = +d.uniq;
-					})
-					
-					// First split up the data by trial/session in a map.
-					fullData.forEach(function(d) {
-						if(m.has([d.trial, d.session])) {
-							m.get([d.trial, d.session]).push(d);
-						} else {
-							m.set([d.trial, d.session], [d]);
-						}
-					});
-					
-					// Sort by uniq, convert to character/token combinations, add to graph
-					var graph = new Graph();
-					m.keys().forEach(function(d) {
-						graph.add(m.get(d)
-							.sort(function(a,b) { return a.uniq - b.uniq; })
-							.map(function(d) { return d.chinese + "," + d.token; }));
-					});
-					
-					// Generate the node ordering using topological sort.
-					// !! This won't work if there are any cycles or miscategorized selection keystrokes.
-					// Array of node strings for index lookup purposes
-					var stringNodeArray = graph.sort();
-					// Array of objects for rendering.
-					var nodeArray = graph.sort()
-						.map(function(d, i) { 
-							return { 
-								chinese: d.split(",")[0], 
-								token: d.split(",")[1],
-								uniq: i
-							}; 
-						});
-
-					scope.data.nodes = nodeArray;
-					
-					// Now go through all the trials and create our links.
-					var linkArray = [];
-					m.keys().forEach(function(d) {
-						// Current trial
-						var current = m.get(d);
-						// Iterate through each keystroke in the current trial
-						for(var i=0; i < current.length - 1; i++) {
-							// We are not at the end (there is no link at the end)
-							linkArray.push({
-								source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token),
-								target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token),
-								session: +current[i].session,
-								trial: +current[i].trial,
-								segment: 1
-							});
-						};
-					});
-					
-					scope.data.links = linkArray;
 
 					var width   = 960,
 					    height  = 200,
@@ -117,6 +53,11 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					var tooltip = d3.select("body").append("div")
 					  .classed("tooltip", true)
 					  .classed("hidden", true);
+					  
+					initialize();
+					update();
+					
+					palladioService.onUpdate("path-component", update);
 
 					// Main
 					//-----------------------------------------------------
@@ -125,10 +66,15 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					    .domain([0, 20])
 					    .range([0, 15]);
 
+				      // Remove SVG if it already exists (this is a very inefficient way to handle updates...)
+					  if(!d3.select(element[0]).select("svg").empty()) {
+					    d3.select(element[0]).select("svg").remove();
+					  }
+					  
 					  var svg = d3.select(element[0]).append("svg")
-					      .attr("id", "arc")
-					      .attr("width", width)
-					      .attr("height", height);
+						      .attr("id", "arc")
+						      .attr("width", width)
+						      .attr("height", height);
 
 					  // create plot within svg
 					  var wrapper = svg.append("g")
@@ -314,8 +260,95 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					      i = d3.interpolateString("0," + l, l + "," + l);
 					    return function(t) { return i(t); };
 					}
+					
+					function buildNodesAndLinks() {
+						
+						fullData = dataService.getDataSync().data;
+						filteredData = dummyDim.top(Infinity);
+						
+						var m = d3.map();
+						var mFiltered = d3.map();
+					
+						fullData.forEach(function(d) {
+							// Turn uniq into a number
+							d.uniq = +d.uniq;
+						})
+						
+						filteredData.forEach(function(d) {
+							// Turn uniq into a number
+							d.uniq = +d.uniq;
+						})
+						
+						// First split up the data by trial/session in a map.
+						fullData.forEach(function(d) {
+							if(m.has([d.trial, d.session])) {
+								m.get([d.trial, d.session]).push(d);
+							} else {
+								m.set([d.trial, d.session], [d]);
+							}
+						});
+						
+						filteredData.forEach(function(d) {
+							if(mFiltered.has([d.trial, d.session])) {
+								mFiltered.get([d.trial, d.session]).push(d);
+							} else {
+								mFiltered.set([d.trial, d.session], [d]);
+							}
+						});
+						
+						// Sort by uniq, convert to character/token combinations, add to graph
+						var graph = new Graph();
+						m.keys().forEach(function(d) {
+							graph.add(m.get(d)
+								.sort(function(a,b) { return a.uniq - b.uniq; })
+								.map(function(d) { return d.chinese + "," + d.token; }));
+						});
+						
+						// Generate the node ordering using topological sort.
+						// !! This won't work if there are any cycles or miscategorized selection keystrokes.
+						// Array of node strings for index lookup purposes
+						var stringNodeArray = graph.sort();
+						// Array of objects for rendering.
+						var nodeArray = graph.sort()
+							.map(function(d, i) { 
+								return { 
+									chinese: d.split(",")[0], 
+									token: d.split(",")[1],
+									uniq: i
+								}; 
+							});
+	
+						scope.data.nodes = nodeArray;
+						
+						// Now go through all the trials and create our links.
+						var linkArray = [];
+						mFiltered.keys().forEach(function(d) {
+							// Current trial
+							var current = m.get(d);
+							// Iterate through each keystroke in the current trial
+							for(var i=0; i < current.length - 1; i++) {
+								// We are not at the end (there is no link at the end)
+								linkArray.push({
+									source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token),
+									target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token),
+									session: +current[i].session,
+									trial: +current[i].trial,
+									segment: 1
+								});
+							};
+						});
+						
+						scope.data.links = linkArray;						
+					}
+					
+					function initialize() {
+						
+					}
 
-					arcDiagram(scope.data);
+					function update() {
+						buildNodesAndLinks();
+						arcDiagram(scope.data);	
+					}
 				}
 			}
 		};
