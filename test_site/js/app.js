@@ -35,7 +35,7 @@ angular.module('palladioStandaloneApp', [
 						showSettings: false,
 						showAccordion: false,
 						showDropArea: false,
-						dimensions: data.metadata.slice(0,4)
+						dimensions: data.metadata.filter(function(d) { return ["editor", "gender", "token_type"].indexOf(d.key) !== -1; })
 					});
 				},
 				resolve: {

@@ -252,7 +252,7 @@ input[type="text"].search {
   text-shadow: none;
   cursor: pointer;
 
-  background-color: #67D6E5;
+  background-color: rgb(31, 119, 180);
   background-image: none;
 
   border: none;

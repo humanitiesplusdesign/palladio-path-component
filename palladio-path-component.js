@@ -27,6 +27,9 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					var fullData, filteredData;
 
 					var xfilter = dataService.getDataSync().xfilter;
+					
+					if(xfilter === undefined) { return; }
+						
 					var dummyDim = xfilter.dimension(function(d) { return true; });
 
 					var width   = 960,
@@ -143,7 +146,7 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					    .attr("r", 14)
 					    .attr("stroke-width","2.5px")
 					    .attr("fill","#ffffff")
-					    .style("stroke", function(d, i) { return color(d.type); });
+					    .style("stroke", function(d, i) { return color(d.tokenType); });
 
 					  // Handling mouseover functions
 					  // nodeEnter.selectAll(".node")
@@ -301,7 +304,7 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 						m.keys().forEach(function(d) {
 							graph.add(m.get(d)
 								.sort(function(a,b) { return a.uniq - b.uniq; })
-								.map(function(d) { return d.chinese + "," + d.token; }));
+								.map(function(d) {return d.chinese + "," + d.token + "," + d.token_type; }));
 						});
 						
 						// Generate the node ordering using topological sort.
@@ -314,6 +317,7 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 								return { 
 									chinese: d.split(",")[0], 
 									token: d.split(",")[1],
+									tokenType: d.split(",")[2],
 									uniq: i
 								}; 
 							});
@@ -329,8 +333,8 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 							for(var i=0; i < current.length - 1; i++) {
 								// We are not at the end (there is no link at the end)
 								linkArray.push({
-									source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token),
-									target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token),
+									source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token + "," + current[i].token_type),
+									target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token + "," + current[i+1].token_type),
 									session: +current[i].session,
 									trial: +current[i].trial,
 									segment: 1
