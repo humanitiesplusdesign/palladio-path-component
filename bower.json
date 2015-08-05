@@ -7,7 +7,7 @@
   ],
   "description": "A component for visualizing paths",
   "dependencies": {
-    "palladio": "~1.0.3",
+    "palladio": "~1.0",
     "tsort": "*"
   },
   "main": "main.js",
