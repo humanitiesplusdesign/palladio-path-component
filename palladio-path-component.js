@@ -3,6 +3,16 @@
 // Most code based on http://bl.ocks.org/hepplerj/e5d3d5787f348cc3b032
 
 angular.module('palladioPathView', ['palladio', 'palladio.services'])
+	.run(['componentService', function(componentService) {
+		var compileStringFunction = function (newScope, options) {
+
+			var compileString = '<div data-palladio-path-view ></div>';
+
+			return compileString;
+		};
+
+		componentService.register('character-path', compileStringFunction);
+	}])
 	.directive('palladioPathView', function (palladioService, dataService) {
 		return {
 			scope : {
@@ -131,7 +141,7 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 
 					function drawNodes(nodes) {
 
-					  var gnodes = d3.select("#wrapper").selectAll("g.node")
+					  var gnodes = d3.select(element[0]).select('svg').select('#wrapper').selectAll("g.node")
 					    .data(nodes);
 
 					  var nodeEnter = gnodes.enter()
@@ -180,7 +190,7 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					    .tension(0)
 					    .angle(function(d) { return radians(d); });
 
-					  d3.select("#wrapper").selectAll(".link")
+					  d3.select(element[0]).select('svg').select('#wrapper').selectAll(".link")
 					    .data(links)
 					  .enter().append("path")
 					    .attr("class", "link")
