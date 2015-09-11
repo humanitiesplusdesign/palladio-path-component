@@ -273,6 +273,30 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 					      i = d3.interpolateString("0," + l, l + "," + l);
 					    return function(t) { return i(t); };
 					}
+
+					function shallowCopy(obj) {
+						var copy = {};
+						for (var attr in obj) {
+							if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+						}
+						return copy;
+					}
+
+					// Objects must have same properties
+					// ignores the 'uniq' property, which is special in our case, and 'generate' property.
+					function shallowCompare(obj1, obj2) {
+						for (var attr in obj1) {
+							if(obj1[attr] !== obj2[attr] && attr !== 'uniq'  && attr !== 'generated') {
+								if(attr === 'uniq') console.log(attr + ":" + obj1[attr] + ":" + obj2[attr]);
+								return false;
+							}
+						}
+						return true;
+					}
+
+					function shallowContains(arr, obj) {
+						return arr.filter(shallowCompare.bind(null, obj)).length > 0 ? true : false;
+					}
 					
 					function buildNodesAndLinks() {
 						
@@ -293,11 +317,17 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 						})
 						
 						// First split up the data by trial/session in a map.
+						var copy = {};
 						fullData.forEach(function(d) {
+							copy = shallowCopy(d);
+							copy.occur = 0;
 							if(m.has([d.trial, d.session])) {
-								m.get([d.trial, d.session]).push(d);
+								while(shallowContains(m.get([d.trial, d.session]), copy)) {
+									copy.occur++;
+								}
+								m.get([d.trial, d.session]).push(copy);
 							} else {
-								m.set([d.trial, d.session], [d]);
+								m.set([d.trial, d.session], [copy]);
 							}
 						});
 						
@@ -312,9 +342,16 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 						// Sort by uniq, convert to character/token combinations, add to graph
 						var graph = new Graph();
 						m.keys().forEach(function(d) {
-							graph.add(m.get(d)
+							var sequence = [];
+							var i = 0;
+
+							m.get(d)
 								.sort(function(a,b) { return a.uniq - b.uniq; })
-								.map(function(d) {return d.chinese + "," + d.token + "," + d.token_type; }));
+								.forEach(function(d) {
+									sequence.push(d.chinese + "," + d.token + "," + d.token_type + "," + d.occur);
+								});
+
+							graph.add(sequence);
 						});
 						
 						// Generate the node ordering using topological sort.
@@ -343,8 +380,8 @@ angular.module('palladioPathView', ['palladio', 'palladio.services'])
 							for(var i=0; i < current.length - 1; i++) {
 								// We are not at the end (there is no link at the end)
 								linkArray.push({
-									source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token + "," + current[i].token_type),
-									target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token + "," + current[i+1].token_type),
+									source: stringNodeArray.indexOf(current[i].chinese + "," + current[i].token + "," + current[i].token_type + "," + current[i].occur),
+									target: stringNodeArray.indexOf(current[i+1].chinese + "," + current[i+1].token + "," + current[i+1].token_type + "," + current[i+1].occur),
 									session: +current[i].session,
 									trial: +current[i].trial,
 									segment: 1
